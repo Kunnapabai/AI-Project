@@ -25,6 +25,8 @@ export const metadata = {
   generator: "v0.dev",
 }
 
+import "./globals.css"
+
 
 
 import './globals.css'

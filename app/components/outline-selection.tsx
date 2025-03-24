@@ -26,6 +26,7 @@ export function OutlineSelection({ keyword, onGenerate, onRegenerate }: OutlineS
   const [isGenerating, setIsGenerating] = React.useState(false)
   const [isRegenerating, setIsRegenerating] = React.useState(false)
   const [isRegenerated, setIsRegenerated] = React.useState(false)
+  const [progress, setProgress] = React.useState(0)
 
   // Initial outlines
   const initialOutlines: OutlineItem[] = [
@@ -63,18 +64,42 @@ export function OutlineSelection({ keyword, onGenerate, onRegenerate }: OutlineS
   const handleGenerateContent = () => {
     // Show loading state
     setIsGenerating(true)
+    setProgress(0)
 
     // Call the onGenerate callback with selected outlines and regeneration status
     onGenerate(selectedOutlines, isRegenerated)
 
-    // Simulate generation process for 5 seconds before navigating
-    setTimeout(() => {
-      setIsGenerating(false)
-      // Navigate to the content editor page with query parameters to indicate regenerated content
-      router.push(
-        `/dental-clinic/${encodeURIComponent(keyword)}/editor?regenerated=${isRegenerated ? "true" : "false"}`,
-      )
-    }, 5000)
+    // Simulate generation process with progress updates
+    const totalTime = 5000 // 5 seconds total
+    const intervalTime = 100 // Update every 100ms
+    const steps = totalTime / intervalTime
+    const increment = 100 / steps
+
+    let currentProgress = 0
+    const interval = setInterval(() => {
+      currentProgress += increment
+
+      // Add some randomness to make it look more natural
+      const randomFactor = Math.random() * 0.5 + 0.8 // Between 0.8 and 1.3
+      const adjustedIncrement = increment * randomFactor
+
+      // Ensure we don't exceed 100%
+      if (currentProgress >= 100) {
+        setProgress(100)
+        clearInterval(interval)
+
+        // Complete the generation after reaching 100%
+        setTimeout(() => {
+          setIsGenerating(false)
+          // Navigate to the content editor page with query parameters to indicate regenerated content
+          router.push(
+            `/dental-clinic/${encodeURIComponent(keyword)}/editor?regenerated=${isRegenerated ? "true" : "false"}`,
+          )
+        }, 300)
+      } else {
+        setProgress(Math.min(currentProgress, 99)) // Cap at 99% until complete
+      }
+    }, intervalTime)
   }
 
   const handleRegenerateOutlines = () => {
@@ -114,7 +139,8 @@ export function OutlineSelection({ keyword, onGenerate, onRegenerate }: OutlineS
                 <label
                   htmlFor={outline.id}
                   className={cn(
-                    "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-900",
+                    "text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+                    selectedOutlines.includes(outline.id) ? "text-gray-900" : "text-gray-400 line-through",
                     outline.level === "h1" && "font-semibold",
                     outline.level === "h2" && "font-medium",
                     outline.level === "h3" && "font-normal",
@@ -161,13 +187,21 @@ export function OutlineSelection({ keyword, onGenerate, onRegenerate }: OutlineS
         </div>
       </div>
 
-      {/* Loading overlay dialog */}
+      {/* Loading overlay dialog with progress bar */}
       <Dialog open={isGenerating} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-[425px] flex flex-col items-center justify-center p-6">
-          <div className="flex flex-col items-center justify-center gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-[#1a73e8]" />
+          <div className="flex flex-col items-center justify-center gap-4 w-full">
             <DialogTitle className="text-xl text-center">Generating content</DialogTitle>
-            <p className="text-center text-gray-500">
+
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full bg-[#1a73e8] transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-center text-gray-500 mt-2">{Math.round(progress)}% complete</p>
+
+            <p className="text-center text-gray-500 mt-4">
               Please wait while we generate your content based on the selected outlines...
             </p>
           </div>

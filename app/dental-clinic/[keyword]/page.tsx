@@ -5,41 +5,24 @@ import { CompetitorAnalysis } from "@/app/components/competitor-analysis"
 import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useParams } from "next/navigation"
 
-// ใช้ React.use() เพื่อละการ Promise และเข้าถึง params
-export default function EditArticlePage({ params }: { params: { keyword: string } }) {
-  const [decodedKeyword, setDecodedKeyword] = useState<string | null>(null)
+export default function EditArticlePage() {
+  const params = useParams() as { keyword: string } // ✅ ใช้ useParams() แทน
+  const decodedKeyword = decodeURIComponent(params.keyword)
   const searchParams = useSearchParams()
   const [showCompetitorAnalysis, setShowCompetitorAnalysis] = useState(false)
 
-  // ใช้ useEffect เพื่อจัดการการแปลงค่า params หลังจาก component โหลดเสร็จ
-  useEffect(() => {
-    // ละการ Promise และเข้าถึงค่าของ params
-    const unwrapParams = async () => {
-      const unwrappedParams = await params
-      if (unwrappedParams?.keyword) {
-        setDecodedKeyword(decodeURIComponent(unwrappedParams.keyword))
-      }
-    }
-
-    unwrapParams()
-  }, [params])
-
-  // ตรวจสอบว่า query parameter "showAnalysis" เป็น true หรือไม่
+  // ตรวจสอบว่ามี showAnalysis ใน URL หรือไม่
   useEffect(() => {
     if (searchParams.get("showAnalysis") === "true") {
       setShowCompetitorAnalysis(true)
     }
   }, [searchParams])
 
-  if (!decodedKeyword) {
-    return <div>Loading...</div> // จะแสดงข้อความว่าโหลดข้อมูลอยู่ในกรณีที่ decodedKeyword ยังไม่พร้อม
-  }
-
   return (
     <div className="flex-1 overflow-auto">
-      {/* Breadcrumb moved outside the form */}
+      {/* Breadcrumb */}
       <div className="px-6 py-4">
         <div className="flex items-center text-sm">
           <Link href="/" className="text-[#1a73e8] hover:text-[#1557b0]">
@@ -54,7 +37,7 @@ export default function EditArticlePage({ params }: { params: { keyword: string 
         </div>
       </div>
 
-      {/* Main content with adjusted proportions */}
+      {/* Main content */}
       <div className="grid grid-cols-5 gap-6 px-6 h-[calc(100vh-8rem)]">
         <div className="col-span-3 h-full overflow-hidden">
           <EditArticleForm keyword={decodedKeyword} onShowCompetitorAnalysis={setShowCompetitorAnalysis} />

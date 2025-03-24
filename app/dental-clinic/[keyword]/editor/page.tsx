@@ -4,31 +4,19 @@ import { ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { ContentEditor } from "@/app/components/content-editor"
 import { AnalysisTabs } from "@/app/components/analysis-tabs"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, useParams } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { useEffect, useState } from "react"
 
-export default function ContentEditorPage({ params }: { params: { keyword: string } }) {
-  const [decodedKeyword, setDecodedKeyword] = useState<string | null>(null)
+export default function ContentEditorPage() {
+  const params = useParams() as { keyword: string } // ✅ Use useParams()
+  const decodedKeyword = decodeURIComponent(params.keyword)
   const router = useRouter()
   const { toast } = useToast()
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState<"competitor" | "content">("competitor")
 
-  // ใช้ useEffect เพื่อจัดการกับ params หลังจาก component โหลดเสร็จ
-  useEffect(() => {
-    const unwrapParams = async () => {
-      // ละการ Promise และเข้าถึงค่าของ params
-      const unwrappedParams = await params
-      if (unwrappedParams?.keyword) {
-        setDecodedKeyword(decodeURIComponent(unwrappedParams.keyword))
-      }
-    }
-
-    unwrapParams()
-  }, [params])
-
-  // ตรวจสอบว่า query parameter "regenerated" มีค่าเป็น true หรือไม่
+  // Check if content was generated to determine if we should show the content tab
   useEffect(() => {
     if (searchParams.get("regenerated") !== null) {
       setActiveTab("content")
@@ -40,14 +28,7 @@ export default function ContentEditorPage({ params }: { params: { keyword: strin
       title: "Content saved",
       description: "Your content has been saved successfully.",
     })
-
-    // Navigate back to the dental clinic page
     router.push("/dental-clinic")
-  }
-
-  // หากยังไม่ได้ decodedKeyword จะแสดงข้อความ loading
-  if (!decodedKeyword) {
-    return <div>Loading...</div>
   }
 
   return (

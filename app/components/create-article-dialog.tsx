@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2 } from "lucide-react"
 
 interface CreateArticleDialogProps {
   open: boolean
@@ -16,6 +15,7 @@ interface CreateArticleDialogProps {
 export function CreateArticleDialog({ open, onOpenChange, onAnalyze }: CreateArticleDialogProps) {
   const [keyword, setKeyword] = React.useState("")
   const [isAnalyzing, setIsAnalyzing] = React.useState(false)
+  const [progress, setProgress] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   // Reset form when dialog opens and focus the input
@@ -23,6 +23,7 @@ export function CreateArticleDialog({ open, onOpenChange, onAnalyze }: CreateArt
     if (open) {
       setKeyword("")
       setIsAnalyzing(false)
+      setProgress(0)
       setTimeout(() => {
         inputRef.current?.focus()
       }, 100)
@@ -32,13 +33,37 @@ export function CreateArticleDialog({ open, onOpenChange, onAnalyze }: CreateArt
   const handleAnalyze = () => {
     if (keyword.trim()) {
       setIsAnalyzing(true)
+      setProgress(0)
 
-      // Simulate analysis process for 5 seconds
-      setTimeout(() => {
-        setIsAnalyzing(false)
-        onAnalyze(keyword)
-        setKeyword("")
-      }, 5000)
+      // Simulate analysis process with progress updates
+      const totalTime = 5000 // 5 seconds total
+      const intervalTime = 100 // Update every 100ms
+      const steps = totalTime / intervalTime
+      const increment = 100 / steps
+
+      let currentProgress = 0
+      const interval = setInterval(() => {
+        currentProgress += increment
+
+        // Add some randomness to make it look more natural
+        const randomFactor = Math.random() * 0.5 + 0.8 // Between 0.8 and 1.3
+        const adjustedIncrement = increment * randomFactor
+
+        // Ensure we don't exceed 100%
+        if (currentProgress >= 100) {
+          setProgress(100)
+          clearInterval(interval)
+
+          // Complete the analysis after reaching 100%
+          setTimeout(() => {
+            setIsAnalyzing(false)
+            onAnalyze(keyword)
+            setKeyword("")
+          }, 300)
+        } else {
+          setProgress(Math.min(currentProgress, 99)) // Cap at 99% until complete
+        }
+      }, intervalTime)
     }
   }
 
@@ -59,11 +84,17 @@ export function CreateArticleDialog({ open, onOpenChange, onAnalyze }: CreateArt
     >
       <DialogContent className="sm:max-w-[425px]">
         {isAnalyzing ? (
-          // Loading state content
+          // Loading state content with progress bar
           <div className="flex flex-col items-center justify-center py-8 gap-4">
-            <Loader2 className="h-12 w-12 animate-spin text-[#1a73e8]" />
             <DialogTitle className="text-xl text-center">Analyzing keyword</DialogTitle>
-            <p className="text-center text-gray-500">
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden mt-2">
+              <div
+                className="h-full bg-[#1a73e8] transition-all duration-300 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <p className="text-center text-gray-500 mt-2">{Math.round(progress)}% complete</p>
+            <p className="text-center text-gray-500 mt-4">
               Please wait while we analyze the keyword and generate insights...
             </p>
           </div>
